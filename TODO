@@ -1,0 +1,12 @@
+TODO for project LILO
+=====================
+
+* update manpages with new option 'small-memory' and changed
+  behaviour of 'large-memory'.
+
+* patching sources because of some warnings while compiling
+  with gcc 4.4.x and higher
+
+* Upgrade of all manpages (move to pot files).
+
+* code cleanup.

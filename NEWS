@@ -1,0 +1,108 @@
+NEWS about project LILO
+=======================
+(For details see file 'CHANGELOG' in the source directory)
+
+
+Version 24.2  (minor and bugfix update of 24.1)
+
+ o Remove compile date and time in binary.
+ o Add 'password' element into example config file.
+ o Upgrade of liloconfig script and manpage.
+
+Version 24.1  (minor and bugfix update of 24.0)
+
+ o Install .dat files of images, too.
+ o Install lilo.static, if existing.
+ o Add CFLAGS, CPPFLAGS, LDFLAGS everywhere needed.
+ o Better support for degraded mdadm RAID1.
+ o Large upgrade of script liloconfig with bugfixes and
+     update function, with fallback to kernel links.
+ o Update example config file.
+ o Update manpage of liloconfig and lilo-uuid-diskid.
+ o Add major device numbers for MMC cards and XVD disks.
+
+
+Version 24.0  (major and bugfix update of 23.2)
+
+ o Update many manpages and add some from Debian.
+ o Add old documentation as (static) html.
+ o Better support for GPT hard disks.
+ o Support for use with kernel 3.x.
+ o Fix to be compatible with gcc 4.8 and higher.
+
+
+Version 23.2  (minor and bugfix update of 23.1)
+
+ o Many fixes in source code and fixes for some error messages.
+ o Remove all obsolete OS/2 code and information.
+ o Fix for larger kernel setup code (needed for kernel >= 2.6.36)
+ o Update of script 'mkrescue'.
+ o Update of manpages (mkrescue.8, lilo.conf.5).
+ o Add new scripts 'liloconfig' and 'lilo-uuid-diskid'.
+
+
+Version 23.1  (minor and bugfix update of 23.0)
+
+ o Many fixes of typos in sources and documentation.
+ o LVM volumes can now be used as root device.
+ o Better computing of (uncompressed) vmlinux size.
+ o Better working on degraded RAID devices.
+ o Update to newer MD RAID 1.0 specification.
+ o Substituted QuickInst script (mkbdist, mksdist removed).
+ o Added new hook scripts for newer kernel support.
+ o Updated and added new menu background images.
+ o Added new TOOLS file for overview of needed tools / packages.
+ o Added new example of lilo.conf with many comments.
+
+
+Version 23.0  (major and bugfix update of 22.8)
+
+ o Major code reorganisation and code cleaning.
+ o Add new option 'small-memory' and modify option 'large-memory'.
+ o Configuration without memory option set to auto-memory, which
+   mean a automatic decision: small initrd will be load <15M, 
+   large initrd will be load >16M.
+ o Now need an absolute path for the installation path DESTDIR,
+   in the past named as ROOT.
+ o Many bugfixes and sensible updates (most from Debian).
+ o Remove obsolete program 'activate'. Instead use 'lilo -A'.
+
+
+Version 22.8  (minor update of 22.7.3)
+
+ o Compile with DEVMAPPER (device-mapper or LVM2) if library is present.
+ o Add 'nodevcache' configuration file keyword.
+ o Allow root device specification with UUID in addition to LABEL.
+
+
+Version 22.7.3  (bugfix update of 22.7.2)
+
+ o Correct table entry for experimental major device 253.
+ o Correct PC/AT keyboard check when NOKEYBOARD compile option is used.
+
+
+Version 22.7.2  (minor update of 22.7.1)
+
+ o Keywords "noraid", "nokbdefault", "nokbdisable" are added.
+ o Compensate for common BIOS bug (sectors==0) on USB disk drives.  
+ o Increase kernel command line to 512 bytes.
+
+
+Version 22.7.1  (minor update of 22.7)
+
+ o Expand device major/minor numbers to more than 8 bits.
+ o Apply security updates to 'mkrescue' & 'QuickInst'.
+ o Allow any keystrike (not just Shift) to display 'boot:' menu, or to 
+   escape from stored command line.
+
+
+Version 22.7  (minor update of 22.6.1)
+
+ o Add the DOS/Windows utility 'lilo.com' which implements the -q -R -V 
+   (-C -m) switches. This utility may be used to set the boot command 
+   line if the sector map file is on a DOS/Windows partition.
+ o Add bulletproofing for "unattended" so that a spurious <CR> character 
+   can be ignored.
+ o Select boot descriptors based upon partially typed names in all 
+   situations except "unattended".
+

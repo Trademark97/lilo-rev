@@ -1,0 +1,404 @@
+Changes for version 24.2 (22-November-2015) - Joachim Wiedorn
+
+  Sources
+  -------
+    - Remove compile date and time in binary to support reproducible
+        builds (thanks to Dmitry Bogatov).
+    - Remove obsolete hints to /boot/boot.b and other files in README.
+    - Use system derived types to make code safe for both the 32-bit and
+        the 64-bit compilation environment. (thanks to TAMUKI Shoichi)
+
+  General
+  -------
+    - Update sample config file lilo.example.conf and config element
+        'password'.
+    - Upgrade of script liloconfig:
+        * three steps of tests with three-state exit code
+          to give the admin more information about failure.
+    - Update manpage pod files and its manpages.
+
+
+Changes for version 24.1 (17-October-2014) - Joachim Wiedorn
+
+  Documentations
+  --------------
+    - Add more information about -R option (one-time command-line).
+
+  Sources
+  -------
+    - Only warn if founded bad partition (src/partition.c).
+    - Install the .dat files of images, too (images/Makefile).
+    - Fix target 'all' in main Makefile.
+    - Install lilo.static, too, if existing.
+    - Add CFLAGS, CPPFLAGS, LDFLAGS everywhere needed
+        (useful e.g. for hardening in Debian).
+    - Add many major device numbers, especially for MMC cards and XVD
+        disks. Remove obsolete numbers (src/lilo.h, src/geometry.c).
+
+  General
+  -------
+    - Use 'lilo -H' in hook scripts to ignore error on degraded mdadm
+        RAID1 systems  (thanks to M. Schnalke).
+    - Small update of script lilo-uuid-diskid.
+    - Large upgrade of script liloconfig:
+        * solve some bugs (see: Debian, Ubuntu)
+        * now with update function
+        * now with more tolerant file names of initram
+        * now with use of kernel links as fallback
+    - Update example config in lilo.example.conf.
+    - Update manpage of liloconfig and lilo-uuid-diskid.
+    - Add hooks for chattr, if vmlinuz files are on xfs filesystems.
+
+
+Changes for version 24.0 (07-June-2013) - Joachim Wiedorn
+
+  Documentations
+  --------------
+    - Update of lilo.conf.5 manpage with some corrections.
+    - Add new manpages as pod files (sources):
+      * liloconfig.pod     (from Debian)
+      * lilo-uuid-diskid.pod   (from Debian)
+      * lilo.pod  (converted from lilo.8)
+    - Add script man/pod2manpages for converting pod files.
+    - Create manpages from pod files.
+    - Deactivate Makefile for docs. Don't generate html/pdf.
+    - Add complete html documentation for history (v21.5).
+
+  Sources
+  -------
+    - Support for kernel images on GPT hard disks in the first 15
+        partitions, otherwise set comments (src/geometry.c, src/lilo.h)
+    - Update src/Makefile to always stripping lilo and lilo.static.
+
+  General
+  -------
+    - Fix abort problem in script mkrescue. (thanks to S. R. Wright)
+    - Update script liloconf to find kernel versions 3.x, too.
+    - Remove some more hints to obsolete OS/2 (source, doc).
+    - Fix to be compatible to gcc 4.8 and higher (use -ffreestanding)
+
+
+Changes for version 23.2 (09-Apr-2011) - Joachim Wiedorn
+
+  Documentations
+  --------------
+    - Optimize documentation generation and information.
+    - Reformatting mkrescue.8 manpage. (thanks to Martin E. Schauer)
+    - Update of lilo.conf.5 manpage and remove of OS/2 information.
+
+  Sources
+  -------
+    - Remove obsolete BIOS workaround from 2002 (src/second.S)
+    - Add information about -H option.   (src/lilo.c)
+    - Save errno for second command.     (src/device.c)
+    - Fix missleading error message.     (src/geometry.c)
+    - Remove obsolete OS/2 code.   (src/boot.c, src/temp.c)
+    - Enlarge maximum number of sectors (MAX_SETUPSECS) for
+        kernel setup code to 63.   (src/bootsect.S, src/lilo.h)
+    - Fix for many small flaws in source code. (Many thanks to
+        Solar Designer and Vasiliy Kulikov of the openwall project).
+
+  General
+  -------
+    - Remove obsolete OS/2 code.   (make.vars, src/Makefile)
+    - Optimize Makefile and src/Makefile for use of $(MAKE).
+    - Use mktemp utility for floppy image generation in mkrescue.
+        (Many thanks to Solar Designer and Vasiliy Kulikov of the 
+        openwall project).
+    - Add new scripts with Makefile (already used for Debian):
+        * liloconfig (for creating new lilo.conf)
+        * lilo-uuid-diskid (convert device names to UUID/DiskID)
+
+
+Changes for version 23.1 (04-Nov-2010) - Joachim Wiedorn
+
+  Documentations
+  --------------
+    - 'make clean' delete all created documentation files.
+    - many small typos in manpages.
+    - Remove obsolete ifpdf definition.
+
+  Sources
+  -------
+    - Optimize and update menue header line.  (src/crt.S)
+    - Fix some typos in sources.  (src/bsect.c, src/raid.c)
+    - LVM volume as root device.  (src/bsect.c)
+    - Remove patch for inaccessible disks (src/geometry.c)
+        and add remarks in README file.
+    - Better computing size of uncompressed kernel. (src/boot.c)
+    - Working on degraded RAID device.      (src/raid.c)
+        (thanks to Christian Schöninger)
+    - Use for MD RAID newer 1.0 specification. (src/geometry.c)
+        (thanks to Robert de Bath)             (src/raid.c)
+
+  General
+  -------
+    - Use better 'checkit' for newer gcc.  (checkit)
+    - Remove very old scripts.      (mkbdist,mksdist,QuickInst)
+    - Create new makefile-based script QuickInst.
+    - Create new hook scripts for kernel and initramfs.
+    - Add new target 'uninstall' for src, man, hooks.
+    - Recreate and add background images as uuencoded files and
+        move images + config files into new 'image' directory.
+    - Add new file TOOLS listing needed tools / packages.
+    - Remove all unneeded stuff with old /boot/boot-* files.
+    - Add new example file for lilo.conf for newer lilo.
+
+
+Changes for version 23.0 (28-June-2010) - Joachim Wiedorn
+
+  Documentations
+  --------------
+    - Move very old file INCOMPAT into readme/.
+    - Update file COPYING with copyrights and license.
+    - Update copyrights in some file headers.
+    - Add new files README, TODO, NEWS.
+    - Fix for some typos in manpages.
+    - Update some old files in readme/ and docs/.
+    - Move to creating pdf instead of ps in /docs.
+    - Add found old manpage man/keytab-lilo.pl.
+    - Update additional informations  (lilo.lsm, sample/README).
+    - Set static manpage path to /usr/share/man (make.vars).
+    - Update of the program command logging header.
+
+  Sources
+  -------
+    - Fix error messages.           (script checkit)
+    - Allow spaces in boot menu.    (bsect.c)
+    - Workaround for buggy Bios.    (probe.c)
+    - Check for user root.          (script mkrescue)
+    - Use better temporary fifo's   (script mkrescue)
+    - Check for needed floppy space (script mkrescue)
+    - devmapper should use major/minor.  (geometry.c)
+    - Bios workarounds.             (second.S)
+    - Suppress error message if device does not exist. (geometry.c)
+    - Change 'map' to 'kmap'.       (keytab-lilo.pl)
+    - Add warnings for inaccessible disk (device.c, geometry.c)
+    - Modify script mkrescue for use of spaces in files.
+    - Speedup for geometry          (geometry.c)
+    - Add 'define' for lvm partition (lilo.h, partition.c)
+    - Don't scan '.udev' directory  (device.c)
+    - Use default size 'hdsize'     (script mkrescue)
+    - Move macro 'S' into 'SA' (crt.S, lilo.c, lilo.h, probe.c, second.S)
+    - Update min. versions of bcc and gcc.  (script checkit)
+    - Add new option 'small-memory' (cfg.c)
+    - Differentiate small-memory/large-memory (bsect.c, boot.c)
+    - Optimize standard logging     (bsect.c)
+    - Update install paths and names for some binaries. (src/Makefile)
+    - Move the environment variable ROOT to DESTDIR.    (src/Makefile)
+    - Deactivate very old scripts   (mkbdist, mksdist, QuickInst)
+
+  General
+  -------
+    - Remove link 'COPYRIGHT' to file COPYING.
+    - Move alle README files into new directory 'readme'.
+    - Move all source code files into new directory 'src'.
+    - Split file CHANGES into CHANGELOG and CHANGELOG_old.
+    - Better check for tool 'mkfs.msdos', for with you must be root.
+
+    - Create new main Makefile.
+    - Move target 'spotless' to 'distclean' in concerned files.
+    - Move src/Makefile header into extra file make.vars.
+    - Remove old comments in src/Makefile.
+    - Displacement from src/Makefile into new man/Makefile.
+    - Displacement from src/Makefile into dos/Makefile.
+    - Delete displaced make commands in src/Makefile.
+    - Update script paths in src/Makefile.
+    - Update path to bdata.h in files of directoy diagnose.
+
+    - Move more variables into make.vars.
+    - Move target 'test' into main Makefile.
+    - Update paths in dos/Makefile.
+    - Displace floppy targets in main and src Makefiles.
+    - Update paths to files in directory diagnose.
+    - Better checks in diagnose/Makefile.
+    - Remove old program 'activate'.
+
+    - Use correct path for script mkrescue.
+    - Target 'all' now without run of 'diagnostic' and 'dosexe'.
+    - Optimize warnings while running target 'diagnostic'.
+    - Renumber the pseudo targets.
+    - Move commands for target 'diagnostic' into src/Makefile.
+
+
+Changes from version 22.7.3 to 22.8 (16-Feb-2007) John Coffman
+
+  Boot Installer
+  --------------
+    - Move configuration information (-X) to a separate procedure.  
+        (lilo.c)
+    - Fix type decl problem in LVM _IOR/RW macros.  (geometry.c)
+    - Add  DEV_DISK_DIR  and edit source to use it.  (config.h, 
+        device.c, geometry.c)
+    - Change handling of 'device-mapper' depending upon DEVMAPPER 
+        option.   (device.c, geometry.c)
+    - Modify 'scan_dir' to stay out of hidden directories.  (device.c)
+    - Add 'nodevcache' option to configuration file.  (cfg.c, lilo.c)
+    - Add sync() before boot sector write to compensate for 2.6 kernel
+        bug in partition buffering code.  (bsect.c)
+    - Allow 'root="UUID=xyz"' syntax.  (bsect.c)
+
+  Boot Loader
+  -----------
+    - Add compilation switch 'NOVGA' to the Makefile.
+
+
+Changes from version 22.7.2 to 22.7.3 (11-Aug-2006) John Coffman
+
+  Boot Installer
+  --------------
+    - Make with changed compile-time options does not affect source
+      checksums. (Makefile)
+    - Remove device 253 from max_partitions[].  (device.c, 22.7.2.1)
+    - Install device-mapper patches. (geometry.c, Makefile)
+    - Correct setting of the VIRTUAL & NOKBD flags.  (bsect.c)
+
+
+Changes from version 22.7.1 to 22.7.2 (05-Jul-2006) John Coffman
+
+  Boot Installer
+  --------------
+    - Add "noraid" keyword to suppress automatic marking of members
+      of a full-disk RAID array as "inaccessible".
+    - Add '-H' switch to override abort on RAID1 install to a failed
+      array.  (raid.c, lilo.c, common.c, common.h)
+    - Add check for DM_RAID (aka ATA_RAID); warn about manual marking
+      of disk drives as "inaccessible".  (device.c)
+    - Add 'geo_query_dev' support for 31-partition devices.  (geometry.c)
+    - Add "Warning:'s" counter.  (common.c, common.h, & *.c)
+    - Disable 'nowarn' when verbose >= 3.   (lilo.c)
+    - Davide BIOS bug (sectors [1..63] -> [1..64])  (probe.c)
+    - Add keywords 'nokbdefault' & 'nokbdisable' on compilation switch
+      based upon input from Alberto Mardegan <mardy@users.sourceforge.net>.
+      (cfg.c, bsect.c, lilo.h)
+    - Add second stage flags:  VIRTUAL & NOKBD whenever any 'virtual' or
+      'nokeyboard' keyword is used.  (lilo.h, bsect.c)
+
+  Boot Loader
+  -----------
+    - Davide BIOS bug (sectors [1..63] -> [1..64])  (first.S, read.S)
+    - Implement 'nokbdefault' & 'nokbdisable' (second.S)
+    - Add cli/sti to keyboard detection code  (second.S)
+    - Fix timeout bug if 'ONE_SHOT' compile option is omitted.  (second.S)
+    - Add marker (space) between initrd/kernel loading dots.  (second.S)
+    - Observe second stage flags: VIRTUAL & NOKBD.  Do not touch hardware
+      unless corresponding flag is set.  (second.S)
+    - Allow DEBUG_NEW version to compile READONLY.  (read.S)
+    - Increase kernel command line to 512 bytes.  (bsect.c, probe.c, lilo.h,
+      second.S)
+
+  Utilities
+  ---------
+    - Add check of FS register to Diagnostic 2 (diagnose/test4.c)
+    - Change 'master' determination for --iso; log config file
+      with --debug  (mkrescue)
+    - Create 'checkit' script to check for versions of gcc, as86,
+      ld86, and bcc.  (checkit)
+    - Davide BIOS bug (sectors [1..63] -> [1..64])  (disk.S, test4.c)
+
+
+Changes from version 22.7 to 22.7.1 (17-Sep-2005) John Coffman
+
+  Boot Installer
+  --------------
+    - Add check that "vmdefault" image does exist.  (bsect.c, lilo.c)
+    - Use 512/4095 major devices (up from 255).  (geometry.c, device.c,
+      geometry.h)
+
+  Boot Loader
+  -----------
+    - Fix "vmdefault=" bug in MENU and BITMAP interfaces. (second.S)
+    - Allow any keyboard strike (not just Shift) to escape from
+      command line, or to display boot menu.  (second.S)
+
+  Utilities
+  ---------
+    - Apply security patch for temp files to  mkrescue & QuickInst
+    - Compensate for missing <msdos/stat.h> in BCC
+
+
+Changes from version 22.6.1 to 22.7 (12-Apr-2005) John Coffman
+
+  Boot Installer
+  --------------
+    - Fix reporting of NULL stored default boot command.  (lilo.c)
+    - Allow "unsafe" on partitions specified by "other=".  (boot.c)
+    - Handle RAID-1 arrays with a failed disk.  (raid.c, geometry.c)
+
+  Boot Loader
+  -----------
+    - Rearrange code in first.S to shorten by 3 (to 0x1B2).  (first.S)
+    - Fix "lock" bug on default image.  (second.S)
+    - Descriptor selection (find_image) based on partial command
+      line.  (second.S, crt.S, bitmap.S)
+    - Improve "unattended":  no selection on partial command; CR can't
+      stop timeout.  (second.S)
+
+  Utilities
+  ---------
+    - New DOS utility:  LILO.COM implements -q -R -V (-C -m) switches.
+
+
+Changes from version 22.6 to 22.6.1 (17-Nov-2004) John Coffman
+
+  Boot Installer
+  --------------
+    - Check command line options for CL_LENGTH max (256).  (bsect.c)
+    - Get '-I' switch to recognize 'addappend='.  (identify.c)
+    - Add 'R' flag to '-I' switch to get root.  (identify.c)
+
+  Boot Loader
+  -----------
+    - Enable read-ahead on EDD drives that support the function.
+      Now a Makefile switch (READAHEAD)  (volume.S, Makefile)
+    - Support BUG_SI_EBDA bugfix for SI controllers that don't properly
+      allocate the EBDA that they use.  (Makefile, second.S, chain.S)
+    - Correct El-Torito CD emulation termination to use HD/FD device
+      code.  (second.S)
+
+  Utilities
+  ---------
+    - Update diagnostic 2.2.4 to 2.3; check EDD fn 4Eh subfunctions.
+      (diagnose/test4.c)
+    - Update 'mkrescue' (2.5) to get root filesystem from /etc/fstab.
+    - Update 'mkrescue --iso --size HD' to create a bootable El Torito
+      format using hard disk emulation.  (mkrescue 3.0)
+    - Add --image option to mkrescue.  (mkrescue 3.0)
+
+
+Changes from version 22.5.9 to 22.6 (01-Sep-2004) John Coffman
+
+  Boot Installer
+  --------------
+    - Correct check of "append=" substring coincidence.  (bsect.c/
+      check_options)
+    - add keyword "unattended" to alter timeout operation. (cfg.c,
+      bsect.c, second.S)
+    - allow 'timeout' & 'delay' to be specified in 's', 'm', or 'h'.
+      (lilo.c, common.c)
+    - change #include <asm/unistd.h> to <linux/unistd.h> (partition.c)
+    - alter 'new_serial' to seed from time & /dev/urandom  (device.c)
+    - address compilation issues with 2.6 kernels (2.6.6) and glibc
+      versions 2.0 and 2.1++ (2.3.3).  (config.h, partition.h,
+      partition.c)
+    - fix "long" -> "int" for compilation on 64-bit systems. (*.h, *.c)
+    - use "mkloader" so compilation does not depend on NASM. (temp.c)
+    - add new block devices:  emd, sata, scsi9-15. (lilo.h, geometry.c)
+    - Check 'other=' for a file that is really an image.  (boot.c)
+    - Allow 'root = "LABEL=label"' in config file.  (bsect.c)
+    - Allow -P parameter to contain '='.  (lilo.c)
+    - Add 'addappend=' specification of local kernel parameters
+      to 'image=' sections.  (bsect.c, cfg.c)
+    - Automatically treat disks beyond the 16th as INACCESSIBLE.
+      (device.c)
+
+  Boot Loader
+  -----------
+    - Modify first-stage loader for BIOS that clobbers BX. (first.S)
+
+  Utilities
+  ---------
+    - Update diagnostic 2.2.4 to to check int 13, fn 8, for register
+      clobbers.  (diagnose/test4.c)
+    - Change regular expression in 'keytab-lilo.pl' (Debian patch)
+

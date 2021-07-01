@@ -1,0 +1,18 @@
+Begin4
+Title:			LILO
+Version:		24.2
+Entered-date:	2015-11-22
+Description:	Generic boot loader for Linux. Distribution 
+		includes full source, documentation and support files.  
+Keywords:		Linux, boot loader, LILO
+Author:			Joachim Wiedorn
+Maintained-by:	Joachim Wiedorn <joodevel@joonet.de>
+Primary-site:	http://lilo.alioth.debian.org/
+Original-site:  http://lilo.alioth.debian.org/
+Alternate-site:	http://alioth.debian.org/projects/lilo/  (developer's site)
+Files:			766kB  lilo-24.2.tar.gz
+Platforms:		Linux (>= 2.4.0), 
+		gcc (>= 3.3.5), as86 (>= 0.16.14) needed to compile.
+		bcc (0.16.14) needed to compile diagnostic disk 2 & DOS *.com.
+Copying-policy:	BSD-License
+End

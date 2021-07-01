@@ -1,0 +1,39 @@
+Needed tools for LILO sources
+=============================
+
+The following is a list of external tools and programs which
+are used within lilo makefiles. Along with the RPMs or DEBs 
+they can be found in:
+
+               at least       tested         programs
+package        version        until          inside
+-----------------------------------------------------------------
+coreutils      6.4.10         8.23           (general)
+                     
+bcc            0.16.14        0.16.17        bcc
+                     
+bin86          0.16.14        0.16.17        as86, ld86
+                     
+gcc            3.3.5          5.2.1          gcc
+                     
+sharutils      4.6.3          4.15.2         uuencode, uudecode
+                     
+perl           5.8.4          5.20.2         pod2man
+
+
+
+Needed tools for installed LILO
+===============================
+
+The following is a list of external tools and programs which
+are used within lilo scripts. Along with the RPMs or DEBs 
+they can be found in:
+
+               at least       tested         programs
+package        version        until          inside
+-----------------------------------------------------------------
+perl           5.8.8          5.20.2         (general)
+
+perl-modules   5.8.8          5.20.2         Getopt::Std,
+                                             Pod::Usage
+                                             File::Copy
