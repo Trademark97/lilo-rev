@@ -19,7 +19,6 @@
 #include "common.h"
 #include "cfg.h"
 
-char *identify;
 static char *opt;
 static char *first, *dflt;
 static int idefault;
