@@ -84,8 +84,9 @@ DM_TABLE *dmtab = NULL;
 int dm_version_nr = 0;
 #endif
 
-int dm_major_list[16];
+int dm_major_list[32];
 int dm_major_nr;
+int nvme_pr = 0;
 
 #ifdef LCF_LVM
 struct lv_bmap {
@@ -200,6 +201,9 @@ void geo_init(char *name)
 
     while(fgets(line, (sizeof line)-1, file)) {
 	if (sscanf(line, "%d %31s\n", &major, major_name) != 2) continue;
+	if (strcmp(major_name, "nvme") !=0) {
+		nvme_pr=-1;
+	}
 	if (strcmp(major_name, "device-mapper") != 0) continue;
 	dm_major_list[dm_major_nr] = major;
 	if (verbose >= 3) {
@@ -708,6 +712,19 @@ void geo_query_dev(GEOMETRY *geo,int device,int all)
 	    geo->start = hdprm.start;
 	    break;
 	case MAJOR_SATA1:
+		if (nvme_pr != 0) {
+			geo->device = 0x80 + last_dev(MAJOR_IDE,64) + (MINOR(device) >> 4);
+			if (!get_all) break;
+			if (ioctl(fd,HDIO_GETGEO,&hdprm) < 0)
+				die("geo_query_dev HDIO_GETGEO (dev 0x%04x): %s",device,strerror(errno));
+			if (all && !hdprm.sectors)
+				die("HDIO_REQ not supported for your NVME controller. Please use a DISK section");
+			geo->heads = hdprm.heads;
+			geo->cylinders = hdprm.cylinders;
+			geo->sectors = hdprm.sectors;
+			geo->start = hdprm.start;
+			break;
+		}
 	case MAJOR_SATA2:
 		printf("WARNING: SATA partition in the high region (>15):\n");
 		printf("LILO needs the kernel in one of the first 15 SATA partitions. If \n");
