@@ -386,7 +386,7 @@ extern char *config_file;
 extern FILE *errstd;
 extern FILE *pp_fd;
 extern char *identify;	/* in identify.c */
-extern int dm_major_list[16];
+extern int dm_major_list[32];
 extern int dm_major_nr;
 
 #define crc(a,b) (~crc32((a),(b),CRC_POLY1))
