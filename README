@@ -1,10 +1,26 @@
 README for project LILO
 =======================
 
-Version 24.3 (planned release) -- Tobias Monckton <tmmonckton at gmail.com>
+Version 24.3 (release) -- Tobias Monckton <tmmonckton at gmail.com>
 ---------------------------------------------------------------------------
 
-TBD
+Various compilation fixes:
+
+  Fixed compilation on non-Glibc systems by putting check for Glibc behind
+  "#ifdef __GLIBC__" pre-processor instruction.
+  Fixed compilation errors that would have occurred with GCC 10.1 or later
+  (due to "-fno-common" becoming the default).
+  Many thanks to the Gentoo repository people for the relevant patches.
+
+New (minor) feature:
+
+  Added support for booting from NVME drives.
+  Many thanks to the Slackware and Gentoo projects for the patch.
+ 
+ Contrib stuff:
+ 
+   Added Gentoo's lilo.conf.example (with some modifications performed by me)
+   under "contrib/gentoo/lilo.conf" .
 
 Versoin 23.1 (release) -- Joachim Wiedorn <ad_debian@joonet.de>
 ---------------------------------------------------------------
