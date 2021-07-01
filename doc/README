@@ -1,0 +1,49 @@
+Printing the documentation
+==========================
+
+You need the following programs to generate a printable file from the
+LaTeX and FIG sources:
+
+  - LaTeX
+  - fig2dev from the transfig package (optional)
+
+The LaTeX translations of the FIG files are already included in the
+distribution, so you can print the documentation without fig2dev.
+WARNING: 'make distclean'  removes those pre-built LaTeX files.
+
+You can also omit all drawings by typing  make dummies . The drawings
+are only necessary when processing the technical overview document.
+
+To run LaTeX just type
+
+  make -f Makefile.old
+
+LaTeX issues many "Overfull \hbox" warnings. They can be safely ignored.
+LaTeX will be run repeatedly until it stops issuing the message
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references 
+right.
+
+At the end you should get the very old documentation in user.pdf and 
+tech.pdf.
+
+Generating user.README
+======================
+
+Use the simple tool t2a.pl for converting to ASCII formatted (old) user
+documentation:
+
+  perl t2a.pl  <user.tex  >user.README
+
+Online documentation
+====================
+
+The (old) documentation can also be found in the web:
+
+http://lilo.alioth.debian.org/olddoc/html/user_21-5.html
+http://lilo.alioth.debian.org/olddoc/pdf/user_21-5.pdf
+
+http://lilo.alioth.debian.org/olddoc/html/tech_21-5.html
+http://lilo.alioth.debian.org/olddoc/pdf/tech_21-5.pdf
+
+
+-- Joachim Wiedorn (2011)
