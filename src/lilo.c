@@ -182,7 +182,14 @@ extern int has_partitions_beta(dev_t dev);	/* defined in geometry.c */
                 printf("Without");
 #endif
                 printf(" device-mapper\n");
+#ifdef __GLIBC__
+		/*
+		* __GLIBC__ is defined in features.h, which should be pulled
+		* in by stdio.h, but this is not guaranteed nor apparently
+		* documented anywhere.
+		*/
 		printf("\nglibc version %d.%d\n", __GLIBC__, __GLIBC_MINOR__);
+#endif
 		printf("Kernel Headers included from  %d.%d.%d\n",
 			LINUX_VERSION_CODE>>16,
 			LINUX_VERSION_CODE>>8 & 255,
