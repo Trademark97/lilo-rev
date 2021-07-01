@@ -1,0 +1,156 @@
+'\" t
+.\" @(#)mkrescue.8
+.\" This page is part of the LILO package, which is released by
+.\" the author(s) under a BSD license.  See the file COPYING
+.\" in the LILO source directory for the license and disclaimer.
+.\"
+.\" Original for lilo 22.1, John Coffman   2001-10-31
+.\" Updated  for lilo 22.5.4, John Coffman  2003-05-24
+.\" Updated  for lilo 22.6.1, John Coffman   2004-11-16
+.\" Updated  for lilo 23.1, Martin Eberhard Schauer 2011-03-06
+.\" (Reformatted to better match Linux man-pages conventions)
+
+.TH MKRESCUE 8 "6 Mar 2011"
+
+.SH NAME
+mkrescue \- make rescue floppy or CD
+
+.SH SYNOPSIS
+.B /sbin/mkrescue
+makes a bootable rescue floppy or CD using the default kernel specified in
+.IR lilo.conf .
+
+.SH DESCRIPTION
+\fBmkrescue\fP takes its specifation for the kernel from the default image
+specified in \fI/etc/lilo.conf\fP.
+If the actual default is an \fIother=\fP specification, then use the first
+\fIimage=\fP specification.
+Any associated initial ramdisk (\fIinitrd=\fP), and \fIappend=\fP options
+will also be used.
+The root directory will be taken to be the \fIcurrent\fP root.
+A bootable floppy or CD-image will be created using LILO version
+22.5.5 or later.
+\fBmkrescue\fP normally requires no options, unless a CD-image is desired
+(\fB--iso\fP).
+
+.SH OPTIONS
+
+.TP
+\fB--append\fP <string>
+Override any \fIappend=\fP options taken from the default image.
+If there is any doubt about whether the \fIlilo.conf\fP
+options are correct, then specify no kernel parameters by providing the
+null string (\fB--append ""\fP).
+
+.TP
+.B --debug
+Provide verbose output of the operation of
+.BR mkrescue ,
+pausing to allow the setting of internal operating parameters to be viewed.
+<CR> must be hit to proceed from these pauses.
+
+.TP
+\fB--device\fP <device>
+Make the floppy on a device other than \fI/dev/fd0\fP.
+The floppy disk will always be made to boot on BIOS device code 0x00 (A:
+drive), without regard to the drive on which it is created.
+
+.TP
+.B --fast
+Use a faster method of creating the boot floppy.
+This involves first creating a file of \fB--size\fP 1k blocks (default
+is 1440) mounted using a loopback device, creating the bootable floppy,
+then copying the entire file to the disk.
+
+.TP
+\fB--fs\fP [ \fIext2\fP | \fImsdos\fP | \fIminix\fP ]
+Specify the type of filesystem to create on the drive.
+\fIext2\fP is the default, but \fImsdos\fP and \fIminix\fP allow
+slightly more disk sectors for really big kernels.
+
+.TP
+.B --help
+Print a short usage synopsis, including a list of command options.
+
+.TP
+\fB--image\fP <label>
+Specifies the label or alias of the particular image from which the
+append, initial ramdisk, root, keytable, and kernel information is to
+be taken.
+
+.TP
+\fB--initrd\fP \fI<filepath>\fP and \fB--kernel\fP \fI<filepath>\fP
+These options, which must be used together, allow specification of an
+arbitrary kernel file and initial ramdisk file to be used on the created
+boot floppy.
+Be sure you know what you are doing before you use these options.
+If no inital ramdisk is needed with a particular kernel, then you MUST
+specify \fB--initrd ""\fP, meaning a null pathname.
+
+.TP
+\fB--install\fP [ \fItext\fP | \fImenu\fP ]
+Allows overriding the default human interface used with the rescue
+bootloader (configuration file "install=" option). \fItext\fP is the
+default on 1.2MB and 1.44MB floppy disks, and \fImenu\fP is the default
+on 2.88MB floppies and HD emulation on CD-R media.
+
+.TP
+.BI --iso
+Create an ISO-9660 bootable CD image (El Torito Format) suitable for
+burning to a CD-R or CD-RW.  The \fB--device\fP specification defaults to
+the filename \fIrescue.iso\fP, and the \fB--size\fP defaults to 2880.
+A utility such as "wodim" may be used to burn the ISO file to a
+recordable CD medium.
+With this ISO option, the \fB--size\fP \fIHD\fP option is allowed.
+
+.TP
+.BI --nocompact
+For faster kernel loading from a floppy, LILO map compaction is normally
+enabled.
+This option will disable map compaction by omitting the lilo \fB-c\fP
+switch.
+
+.TP
+.BI --noformat
+Suppresses creation of a new filesystem on the boot floppy.
+This option may be used ONLY
+when you know that the floppy you will be writing upon is formatted with the
+same filesystem as specified by \fB--fs\fP \fIXXX\fP (default is \fIext2\fP).
+
+.TP
+\fB--root\fP \fI<device>\fP
+Specify the root filesystem for the kernel on the boot floppy.
+The currently mounted root is taken as the default specification.
+
+.TP
+\fB--size\fP [ \fI1440\fP | \fI1200\fP | \fI2880\fP | \fIHD\fP ]
+The default floppy disk size is \fI1440\fP, meaning a 1.44MB floppy.
+When \fB--iso\fP is specified, the default size is \fI2880\fP.
+Allowed specifications are \fI1200\fP, \fI1440\fP, or \fI2880\fP, meaning
+a 1.2MB, 1.44MB or 2.88MB floppy, respectively.
+No other floppy disk sizes are supported.
+.sp
+The \fIHD\fP specification, meaning "hard disk", may only be used with
+the \fB--iso\fP option, to indicate a 16MB hard disk is to be generated
+for emulation.
+This allows for very large kernel/initial ramdisk combinations on CD-R.
+The hard disk image is created using loopback devices \fI/dev/loop0\fP
+and \fI/dev/loop1\fP, which must be free to utilize this size option.
+
+.TP
+.BI --version
+Print the version number of \fBmkrescue\fP, then terminate.
+
+.SH "SEE ALSO"
+.BR cdrecord (1),
+.BR dd (1),
+.BR wodim (1),
+.BR lilo.conf (5),
+.BR lilo (8),
+.BR mkfs (8),
+.BR mkinitrd (8),
+.BR mkisofs (8),
+.BR mount (8)
+
+.\" .SH "AUTHOR"
+.\" John Coffman <johninsd@san.rr.com>
