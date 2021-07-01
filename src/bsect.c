@@ -53,9 +53,6 @@
 #define EARLY_MAP
 #endif
 
-
-int boot_dev_nr;
-
 static BOOT_SECTOR bsect,bsect_orig;
 static MENUTABLE menuparams;
 static DESCR_SECTORS descrs;
