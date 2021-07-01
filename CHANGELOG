@@ -1,3 +1,17 @@
+Changes for version 24.3 (01-July-2021) - Tobias Monckton
+
+  Sources
+  -------
+    - Added patch from Gentoo repository to enable NVME support
+    - Put check for Glibc behind proper "#ifdef __GLIBC__", also from Gentoo repository
+    - Fixed compilation with GCC 10.x and newer, also from Gentoo repository
+    - Added Gentoo's lilo.conf.example under "contrib/gentoo/lilo.conf"
+ 
+   General
+   -------
+     - Avoid interactive password configuration by disabling "NOVGA" in make.vars,
+       from Gentoo repository
+
 Changes for version 24.2 (22-November-2015) - Joachim Wiedorn
 
   Sources
