@@ -41,7 +41,7 @@ static int raid_device[MAX_RAID+1];
 static int raid_bios[MAX_RAID+1];
 static int device;
 enum {MD_NULL=0, MD_PARALLEL, MD_MIXED, MD_SKEWED};
-int do_md_install, ndisk, md_bios;
+int ndisk, md_bios;
 static char *raid_list[MAX_RAID];
 static int list_index[MAX_RAID];
 static int nlist, faulty;
