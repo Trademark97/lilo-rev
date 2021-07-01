@@ -1,0 +1,871 @@
+#!/usr/bin/perl -w
+
+#       liloconfig -  creating a new lilo.conf file
+#       
+#       
+#       Copyright 2011-2015 Joachim Wiedorn <joodevel at joonet.de>
+#       
+#       This program is free software; you can redistribute it and/or modify
+#       it under the terms of the GNU General Public License as published by
+#       the Free Software Foundation; either version 2 of the License, or
+#       (at your option) any later version.
+#       
+#       This program is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#       GNU General Public License for more details.
+#       
+#       You should have received a copy of the GNU General Public License
+#       along with this program; if not, write to the Free Software
+#       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#       MA 02110-1301, USA.
+
+#---- some modules
+use strict;
+use warnings;
+use Getopt::Std;
+use Pod::Usage;
+use File::Copy;
+
+
+#---- global variables
+my $prog = $0;
+$prog =~ s#.*/##;
+my $version = "0.5";
+
+#---- parameter check
+# h: help, v: verbose, f: force
+our $opt_h = 0;
+our $opt_v = 0;
+our $opt_f = 0;
+our $opt_u = 0;
+getopts('hvfu');
+# define perldoc usage
+pod2usage(1) if $opt_h;
+
+#---- other variables
+our $liloconf  = "/etc/lilo.conf";
+our $conftmp_1 = "/tmp/lilotmp1";
+our $conftmp_2 = "/tmp/lilotmp2";
+our $liloconfold = $liloconf . ".old";
+our $liloconfnew = $liloconf . ".new";
+our $fstabconf = "/etc/fstab";
+
+our $idpath = "/dev/disk/by-id";
+our $uuidpath = "/dev/disk/by-uuid";
+our $lblpath = "/dev/disk/by-label";
+our $template = "/usr/share/doc/lilo/examples/lilo.example.conf.gz";
+
+our $rootpart;    # found root part
+our $root_dev;    # /dev/hdX9, /dev/sdX9, /dev/md/*
+our $root_id;     # UUID, LABEL, ID
+our $boot_dev;    # /dev/hdX, /dev/sdX, /dev/md
+our $boot_id;     # DISK-ID
+
+#-------------------- main program --------------------
+
+sub main {
+
+	my $exit = 0;
+
+	if (@ARGV == 1) {
+		$liloconf = "$ARGV[0]";
+		$liloconfold = $liloconf . ".old";
+		$liloconfnew = $liloconf . ".new";
+	}
+	if (-f $liloconf and not $opt_f and not $opt_u) {
+		print $prog .": " . $liloconf .
+		  " already exist! Please force overwriting with '-f' or '-u'.\n";
+		$exit = 1;
+	}
+	else {
+		$exit = create_lilo_conf();
+	}		
+	return $exit;
+}
+
+#-------------------- subroutines --------------------
+
+sub create_lilo_conf {
+
+	my $exit = 1;
+	my $found1 = 0;
+	my $found2 = 0;
+	my $found3 = 0;
+
+	# read fstab and search for root device
+	$found1 = read_fstab();
+
+	## STEP 1 ##
+	if ($found1 == 0)
+		# nothing found, exit by error
+		{ $found2 = 0;}
+	elsif ($found1 == 1)
+		# identify root device: root_dev and root_id
+		{ $found2 = convert_root_device(); }
+	elsif ($found1 == 2)
+		# nothing found, but exit successfully
+		{ $exit = 0; $found2 = 0;}
+
+	## STEP 2 ##
+	if ($found2 == 0)
+		# nothing found, exit by error
+		{ $found3 = 0;}
+	elsif ($found2 == 1)
+		# convert root device to boot device
+		{ $found3 = convert_boot_device(); }
+	elsif ($found2 == 2)
+		# nothing found, but exit successfully
+		{ $exit = 0; $found2 = 3;}
+
+	## STEP 3 ##
+	if ($found3 == 0)
+		# nothing found, exit by error
+		{ $exit = 1;}
+	elsif ($found3 == 1) {
+		if ((-f $liloconf) and not (-w $liloconf)) {
+			print "E: Have no write permissions to $liloconf !\n";
+			$exit = 1;
+		}
+		else {
+			# finally write new/updated lilo.conf file
+			if ($opt_u) { $exit = update_lilo_conf(); }
+			else        { $exit = write_lilo_conf(); }
+		}
+	}
+	elsif ($found3 == 2)
+		# nothing found, but exit successfully
+		{ $exit = 0;}
+
+	return $exit;
+}
+
+sub read_fstab {
+	
+	my $root_part;
+	my $mountpoint;
+	my $broken_fstab = 1;
+	my $base_fstab = 0;
+	my $found = 1;
+
+	# check fstab for root device
+	if (-f $fstabconf) {
+		# Parsing fstab for the root partition
+		open(FSTAB, "<$fstabconf") or die "$prog: couldn't open $fstabconf: $!\n";
+
+		while (<FSTAB>) {
+			# Search magic string which indicates a base filesystem
+			$base_fstab = 1 if /^# UNCONFIGURED FSTAB FOR BASE SYSTEM/;
+			next if /^#/;	  # ignore comment lines
+
+			s/^[ \t]+//;	  # remove space or tab at begin of the line
+			($root_part,$mountpoint) = split(/[ \t]+/);
+			next unless defined $mountpoint;    # ignore empty lines too
+
+			# stop if we found the root device...
+			if ($mountpoint eq '/') {
+				$broken_fstab = 0;
+				last;
+			}
+		}
+		close(FSTAB) or die "$prog: couldn't close $fstabconf: $!\n";
+	}
+
+	if ($base_fstab) {
+		print "E: It seems you want configure the base filesystem \n" .
+		      "and I'm therefore simply going to exit successfully \n" .
+		      "without trying to actually configure LILO properly. \n";
+		$found = 2;
+	}
+	if ($broken_fstab) {
+		print "E: It seems the file /etc/fstab is not properly \n" .
+		      "configured: no root partition '/' found! \n";
+		$found = 0;
+	}
+	# save the found root device
+	$rootpart = $root_part;
+
+	return $found;
+}
+
+sub convert_root_device {
+	
+	my $found = 1;
+	my $root_disk = '';
+	my $root_link;
+	# global variables: $root_dev, $root_id
+
+	if ($rootpart =~ /\/dev\//) {
+		$root_disk = $rootpart;
+
+		if (-b $root_disk) {
+			$root_dev = $root_disk;
+			if($opt_v) { print "Convert root option $root_disk into UUID\n"; }
+			$root_id = find_id_link($root_disk,$uuidpath);
+
+			if (not -l "$uuidpath/$root_id") {
+				if($opt_v) { print "W: could not find UUID for $root_disk!\n"; }
+				# than we will use root_dev in lilo.conf
+			}
+			else {
+				# finally add uuid label
+				$root_id = "UUID=" . $root_id;
+			}
+		}
+		else {
+			if($opt_v) { print "E: cannot check $root_disk: device does not exist!\n"; }
+			$found = 0;
+		}
+	}
+	elsif ($rootpart =~ /^UUID/ or $rootpart =~ /^LABEL/) {
+		$root_link = $rootpart;
+		$root_link =~ s{\"}{}g;
+		$root_link =~ s{^LABEL=}{/dev/disk/by-label/};
+		$root_link =~ s{^UUID=}{/dev/disk/by-uuid/};
+
+		if (-l $root_link) {
+			$root_id = $rootpart;
+			$root_disk = readlink($root_link);
+			$root_disk =~ s{\.\./\.\./}{/dev/};
+
+			if (-b $root_disk) { $root_dev = $root_disk; }
+			else {
+				if($opt_v) { print "E: cannot check $root_link: link does not exist!\n"; }
+				$found = 0;
+			}
+		}
+		else {
+			print "E: cannot check $root_link: link does not exist!\n";
+			$found = 0;
+		}
+	}
+	else {
+		print "E: cannot use uncommon $rootpart found as root device!\n";
+		$found = 0;
+	}
+
+	return $found;
+}
+
+sub find_id_link {
+	
+	my $olddev = $_[0];
+	my $path_id = $_[1];
+	my @sellinks;
+	my $_idlink;
+	my $_actlink;
+	my $newdevid = '';
+
+	opendir(MYDH, "$path_id") or die("cannot open $path_id: $! \n");
+	@sellinks = grep(!/\-part\d\d?$/, grep(!/^\.\.?$/, readdir(MYDH)));
+	@sellinks = sort(@sellinks);
+	closedir(MYDH);
+
+	foreach $_idlink (@sellinks) {
+		chomp $_idlink;
+		if(not $_idlink =~ /^usb/ and length($_idlink) > 10) {
+			$_actlink = readlink("$path_id/$_idlink");
+			$_actlink =~ s{\.\./\.\./}{/dev/};
+			if($opt_v) { print "** try: $_actlink => $_idlink \n"; }
+			
+			# stop if we find the right link...
+			if($_actlink eq $olddev) {
+				$newdevid = $_idlink;
+				if($opt_v) { print "** convert: $_actlink => $path_id/$_idlink \n\n"; }
+				last;
+			}
+		}
+	}
+
+	if(not $newdevid) {
+		if($opt_v) { print "W: $olddev not converted: link not useful\n\n"; }
+	}
+	
+	return ($newdevid);
+}
+
+sub convert_boot_device {
+
+	my $found = 1;
+	my $boot_disk = '';
+	my $boot_link;
+	# global variables: $boot_dev, $boot_id
+	
+	if (-b $root_dev) {
+		if ($root_dev =~ /\/dev\/md/) {
+			# search if the found partition is a raid volume
+			$boot_disk = check_raid($root_dev);
+		}
+		else {
+			# find the right block device name
+			$boot_disk = $root_dev;
+			$boot_disk =~ s/\d+$//;
+		}
+
+		if (-b $boot_disk) {
+			# set global variable boot_dev
+			$boot_dev = $boot_disk;
+		}
+		else { 
+			print "E: boot device $boot_disk does not exist! \n";
+			$found = 0;
+		}
+	}
+	else {
+		print "E: could not find root device $root_dev! \n";
+		$found = 0;
+	}
+	
+	if ($found) {
+		if($opt_v) { print "Convert boot option $boot_disk into DISK ID\n"; }
+		$boot_id = $idpath . "/" . find_id_link($boot_disk,$idpath);
+
+		if(not -l "$boot_id") {
+			if($opt_v) { print "W: could not find DISK ID for $boot_disk!\n"; }
+			# not so important. Then using boot_dev in lilo.conf
+		}
+	}
+	
+	return $found;
+}
+
+sub check_raid {
+	
+	my $part = $_[0];
+	my $mdname;
+	my $md;
+	my @devices;
+	
+	# check if the found partition is a raid volume
+	if($part =~ /\/dev\/md/)
+	{
+		$mdname = $part;
+		$mdname =~ s/\/dev\///;
+		$mdname =~ s/\///;
+		$md = `grep $mdname /proc/mdstat`;
+	
+		@devices = split(" ", $md);
+		@devices = sort(@devices[4..$#devices]);
+		$part = "/dev/" . $devices[0];
+		$part =~ s/\[.*$//;
+	}
+	
+	return $part;
+}
+
+sub write_lilo_conf {
+	
+	my @status;
+	my $exit = copy_template();
+
+	if (not $exit) {
+		# create lilo.conf.new
+		write_bootroot_option();
+		if ( not write_image_config() ) {
+			if ( not write_imagelinks_config() ) {
+				print "E: Cannot find any images or image symlinks!\n";
+				$exit = 1;
+			}
+		}
+	}
+
+	if (-f $liloconf and not -f $liloconfold) {
+		# move old lilo.conf to lilo.conf.old
+		@status = stat($liloconf);
+		move ($liloconf, $liloconfold) or die "Cannot rename file: $!\n";
+		utime ($status[9],$status[9],$liloconfold);
+		chmod (0600,$liloconfold);
+		print "Old file moved to: $liloconfold \n";
+	}
+	if (-f $liloconfnew) {
+		move ($liloconfnew, $liloconf) or die "Cannot move file: $!\n";
+		chmod (0600,$liloconf);
+		print "New file created as: $liloconf \n";
+		print "Now you must execute '/sbin/lilo' to " . 
+		      "activate this new configuation!\n\n";
+	}
+	else {
+		print "E: Cannot find temporary file $conftmp_1!\n";
+		$exit = 1;
+	}
+	
+	return $exit;
+}
+
+sub copy_template {
+
+	my $endreached = 0;
+	my $exit = 0;
+	
+	# copy template config
+	if (-f $template) {
+		system("gzip -d -c $template >$conftmp_1") if ($template =~ /\.gz$/);
+		system("cat $template >$conftmp_1") if ($template =~ /\.conf$/);
+
+		open(CONFTMP1, "<$conftmp_1") or die "$prog: couldn't open $conftmp_1: $!\n";
+		open(CONFTMP2, ">$conftmp_2") or die "$prog: couldn't open $conftmp_2: $!\n";
+
+		while (<CONFTMP1>) {
+			if (/first\ example/) {
+				$endreached = 1;
+			}
+			unless ($endreached) {
+				print CONFTMP2 $_;
+			}
+		}
+		close(CONFTMP1) or die "$prog: couldn't close $conftmp_1: $!\n";;
+		close(CONFTMP2) or die "$prog: couldn't close $conftmp_2: $!\n";;
+	}
+	else {
+		open(CONFTMP2, ">$conftmp_2") or die "$prog: couldn't open $conftmp_2: $!\n";
+		print CONFTMP2 "# /etc/lilo.conf
+
+### LILO global section ###
+
+#large-memory
+lba32
+boot = /dev/sda
+root = /dev/sda1
+map = /boot/map
+install = menu
+menu-scheme = Wb:Yr:Wb:Wb
+prompt
+timeout = 100
+vga = normal
+#default = Linux
+
+### LILO per-image section ###
+
+"; 
+		close(CONFTMP2) or die "$prog: couldn't close $conftmp_2: $!\n";;
+	}
+	
+	return $exit;
+}
+
+sub update_lilo_conf {
+
+	my @status;
+	my $exit = 0;
+
+	if (-f $liloconf) {
+		# copy old config
+		system("cat $liloconf >$conftmp_2");
+		
+		# create lilo.conf.new
+		update_bootroot_option();
+	}
+	
+	if (-f $liloconf and not -f $liloconfold) {
+		# move old lilo.conf to lilo.conf.old
+		@status = stat($liloconf);
+		move ($liloconf, $liloconfold) or die "Cannot rename file: $!\n";
+		utime ($status[9],$status[9],$liloconfold);
+		chmod (0600,$liloconfold);
+		print "Old file moved to: $liloconfold \n";
+	}
+	if (-f $liloconfnew) {
+		move ($liloconfnew, $liloconf) or die "Cannot move file: $!\n";
+		chmod (0600,$liloconf);
+		print "New file created as: $liloconf \n";
+		print "Now you must execute '/sbin/lilo' to " . 
+		      "activate this new configuation!\n\n";
+	}
+	else {
+		print "E: Cannot find temporary file $conftmp_1!\n";
+		$exit = 1;
+	}
+	
+	return $exit;
+}
+
+sub write_bootroot_option {
+	
+	my $oldline = '';
+	my $newline = '';
+	my $ok = 0;
+
+	open(MYFH_NEW, "> $liloconfnew") or die "Cannot open file: $!";
+	open(MYFH_TMP, "< $conftmp_2") or die "Cannot read file: $!";
+
+	while (<MYFH_TMP>) {
+		# line read from MYFH_TMP
+		$oldline = $_;
+
+		# lines beginning direct with boot option
+		if (/^boot/ and $ok == 0) {
+			if ($boot_id) {
+				$newline = "#boot = " . $boot_dev . "\n";
+				print MYFH_NEW $newline;
+				if($opt_v) { print $newline; }
+				$newline = "boot = " . $boot_id . "\n";
+			}
+			else {
+				$newline = "boot = " . $boot_dev . "\n";
+			}
+			print MYFH_NEW $newline;
+			if($opt_v) { print $newline; print "\n";}
+			# convert only one time
+			$ok = 1;
+		}
+		# lines beginning direct with root option
+		elsif (/^root\ =/) {
+			if ($root_id) {
+				$newline = '#root = ' . $root_dev . "\n";
+				print MYFH_NEW $newline;
+				if($opt_v) { print $newline; }
+				$newline = 'root = "' . $root_id . '"' . "\n";
+			}
+			else {
+				$newline = 'root = ' . $root_dev . "\n";
+			}
+			print MYFH_NEW $newline;
+			if($opt_v) { print $newline; print "\n";}
+		}
+		# print the rest into file, but not old commented root lines
+		elsif ( not (/^\#boot\ =/ or /^\#root\ =/) ) {
+			print MYFH_NEW $oldline;
+		}
+	}
+
+	close(MYFH_TMP);
+	close(MYFH_NEW);
+}
+
+sub update_bootroot_option {
+	
+	my $oldline = '';
+	my $newline = '';
+	my $ok = 0;
+
+	open(MYFH_NEW, "> $liloconfnew") or die "Cannot open file: $!";
+	open(MYFH_TMP, "< $conftmp_2") or die "Cannot read file: $!";
+	
+	while (<MYFH_TMP>) {
+		# read (old) line from MYFH_TMP
+		$oldline = $_;
+
+		# lines beginning direct with boot option
+		if (/^boot/ and $ok == 0) {
+			if ($boot_id) {
+				$newline = "#boot = " . $boot_dev . "\n";
+				print MYFH_NEW $newline;
+				if($opt_v) { print $newline; }
+				$newline = "boot = " . $boot_id . "\n";
+			}
+			else {
+				$newline = "boot = " . $boot_dev . "\n";
+			}
+			print MYFH_NEW $newline;
+			if($opt_v) { print $newline; print "\n";}
+			# convert only one time
+			$ok = 1;
+		}
+		# lines beginning direct with root option
+		elsif (/^root\ =/) {
+			if ($root_id) {
+				$newline = '#root = ' . $root_dev . "\n";
+				print MYFH_NEW $newline;
+				if($opt_v) { print $newline; }
+				$newline = 'root = "' . $root_id . '"' . "\n";
+			}
+			else {
+				$newline = 'root = ' . $root_dev . "\n";
+			}
+			print MYFH_NEW $newline;
+			if($opt_v) { print $newline; print "\n";}
+		}
+		# lines beginning with one tabulator or with two - eight spaces
+		elsif (/^\troot\ =/ or /^\ {2,8}root\ =/) {
+			if ($root_id) {
+				$newline = "\t" . '#root = ' . $root_dev . "\n";
+				print MYFH_NEW $newline;
+				if($opt_v) { print $newline; }
+				$newline = "\t" . 'root = "' . $root_id . '"' . "\n";
+			}
+			else {
+				$newline = "\t" . 'root = ' . $root_dev . "\n";
+			}
+			print MYFH_NEW $newline;
+			if($opt_v) { print $newline; print "\n";}
+		}
+		# print the rest into file, but not old commented root lines
+		elsif ( not (/^\#boot\ =/ or /^\#root\ =/ or /^\t\#root\ =/ or /^\ {2,8}\#root\ =/) ) {
+			print MYFH_NEW $oldline;
+		}
+	}
+
+	close(MYFH_TMP);
+	close(MYFH_NEW);
+}
+
+sub write_image_config {
+
+	my $image;
+	my $initrd;
+	my $initrd2;
+	my $nr;
+	my $nr2;
+
+	# append to new lilo.conf
+	open(MYFH_NEW, ">> $liloconfnew") or die "Cannot open file: $!";
+
+	# search for kernel image files
+	my @vmlinuz = readpipe("/bin/ls -t -1 /boot/vmlinuz* 2>/dev/null");
+
+	# create some lines for each kernel image
+	$nr = 0;
+	foreach $image (@vmlinuz) {
+		# search for kernel initrd file
+		chomp $image;
+		$initrd = $image;
+		$initrd =~ s/vmlinuz/initrd\.img/;
+		$initrd2 = $initrd;
+		$initrd2 =~ s/\.img//;
+		$nr2 = $nr + 1;
+
+		print MYFH_NEW     'image = ' . $image . "\n";
+		if($opt_v) { print 'image = ' . $image . "\n"; }
+
+		if ($nr == 0) {
+			print MYFH_NEW     "\t"  . 'label = "Linux"' . "\n";
+			if($opt_v) { print "\t"  . 'label = "Linux"' . "\n"; }
+		}
+		elsif ($nr == 1) {
+			print MYFH_NEW     "\t"  . 'label = "Linux Old"' . "\n";
+			if($opt_v) { print "\t"  . 'label = "Linux Old"' . "\n"; }
+		}
+
+		print MYFH_NEW     "\t"  . 'read-only' . "\n";
+		if($opt_v) { print "\t"  . 'read-only' . "\n"; }
+		print MYFH_NEW     "#\t" . 'restricted' . "\n";
+		if($opt_v) { print "#\t" . 'restricted' . "\n"; }
+		print MYFH_NEW     "#\t" . 'alias = ' . "$nr2" . "\n";
+		if($opt_v) { print "#\t" . 'alias = ' . "$nr2" . "\n"; }
+		print MYFH_NEW     "#\t" . 'optional' . "\n";
+		if($opt_v) { print "#\t" . 'optional' . "\n"; }
+
+		if (-e $initrd) {
+			print MYFH_NEW     "\t"  . 'initrd = ' . $initrd . "\n";
+			if($opt_v) { print "\t"  . 'initrd = ' . $initrd . "\n"; }
+		}
+		elsif (-e $initrd2) {
+			print MYFH_NEW     "\t"  . 'initrd = ' . $initrd2 . "\n";
+			if($opt_v) { print "\t"  . 'initrd = ' . $initrd2 . "\n"; }
+		}
+		else {
+			if($opt_v) { print "W: initrd $initrd could not be found!\n" }
+		}
+
+		print MYFH_NEW     "\n";
+		if($opt_v) { print "\n"; }
+
+		$nr++;
+		last if ($nr > 1);
+	}
+
+	close(MYFH_NEW);
+
+	if ($nr == 0) {
+		print "No images '/boot/vmlinuz*' found!\n"; 
+		if($opt_v) { print "\n"; }
+	}
+	elsif( not $opt_v ) {
+		print "$nr images '/boot/vmlinuz*' found.\n"; 
+	}
+	return ($nr > 0);     # if =0 this is an error
+}		
+
+sub write_imagelinks_config {
+
+	my $image;
+	my $initrd;
+	my $nr;
+	my $nr2;
+
+	# append to new lilo.conf
+	open(MYFH_NEW, ">> $liloconfnew") or die "Cannot open file: $!";
+
+	# search for kernel image files
+	my @vmlinuz = readpipe("/bin/ls -t -1 /vmlinuz /vmlinuz.old 2>/dev/null");
+
+	# create some lines for each kernel image
+	$nr = 0;
+	foreach $image (@vmlinuz) {
+		# search for kernel initrd file
+		chomp $image;
+		$initrd = $image;
+		$initrd =~ s/vmlinuz/initrd\.img/;
+		$nr2 = $nr + 1;
+
+		print MYFH_NEW     'image = ' . $image . "\n";
+		if($opt_v) { print 'image = ' . $image . "\n"; }
+
+		if ($nr == 0) {
+			print MYFH_NEW     "\t"  . 'label = "Linux"' . "\n";
+			if($opt_v) { print "\t"  . 'label = "Linux"' . "\n"; }
+		}
+		elsif ($nr == 1) {
+			print MYFH_NEW     "\t"  . 'label = "Linux Old"' . "\n";
+			if($opt_v) { print "\t"  . 'label = "Linux Old"' . "\n"; }
+		}
+
+		if ($root_id) {
+			print MYFH_NEW     "\t"  . '#root = ' . $root_dev . "\n";
+			if($opt_v) { print "\t"  . '#root = ' . $root_dev . "\n"; }
+			print MYFH_NEW     "\t"  . 'root = "' . $root_id . '"' . "\n";
+			if($opt_v) { print "\t"  . 'root = "' . $root_id . '"' . "\n"; }
+		}
+		else {
+			print MYFH_NEW     "\t"  . 'root = ' . $root_dev . "\n";
+			if($opt_v) { print "\t"  . 'root = ' . $root_dev . "\n"; }
+		}
+
+		print MYFH_NEW     "\t"  . 'read-only' . "\n";
+		if($opt_v) { print "\t"  . 'read-only' . "\n"; }
+		print MYFH_NEW     "#\t" . 'restricted' . "\n";
+		if($opt_v) { print "#\t" . 'restricted' . "\n"; }
+		print MYFH_NEW     "#\t" . 'alias = ' . "$nr2" . "\n";
+		if($opt_v) { print "#\t" . 'alias = ' . "$nr2" . "\n"; }
+		print MYFH_NEW     "#\t" . 'optional' . "\n";
+		if($opt_v) { print "#\t" . 'optional' . "\n"; }
+
+		if (-e $initrd) {
+			print MYFH_NEW     "\t"  . 'initrd = ' . $initrd . "\n";
+			if($opt_v) { print "\t"  . 'initrd = ' . $initrd . "\n"; }
+		}
+		else {
+			if($opt_v) { print "W: initrd $initrd could not be found!\n" }
+		}
+
+		print MYFH_NEW     "\n";
+		if($opt_v) { print "\n"; }
+
+		$nr++;
+		last if ($nr > 1);
+	}
+
+	close(MYFH_NEW);
+
+	if ($nr == 0) {
+		print "No image symlinks '/vmlinuz*' found!\n"; 
+		if($opt_v) { print "\n"; }
+	}
+	elsif( not $opt_v ) {
+		print "$nr image symlinks '/vmlinuz*' found.\n"; 
+	}
+	return ($nr > 0);     # if =0 this is an error
+}
+
+main();
+
+__END__
+
+
+=head1 NAME
+
+liloconfig - create new lilo.conf file (with diskid and uuid)
+
+=head1 SYNOPSIS
+
+B<liloconfig> [B<-h>] [B<-v>] [B<-f>] [B<-u>] [B<lilo.conf>]
+
+=head1 DESCRIPTION
+
+liloconfig is an simple program for creating a new lilo.conf file.
+After creating the new configuration file you must execute '/sbin/lilo'.
+
+liloconfig use the lilo.example.conf file as template. In the final
+lilo.conf file you find many useful comments for custom changes.
+
+Please pay attention about error messages if liloconfig cannot find
+any images (/boot/vmlinuz*) oder image symlinks (/vmlinuz, /vmlinu.old).
+Then you need to search for images by ourself and make some changes
+in the '/etc/lilo.conf' file. Otherwise no bootloader can be installed
+with '/sbin/lilo'.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-h>
+
+Print a brief help.
+
+=item B<-v>
+
+Print verbose messages.
+
+=item B<-f>
+
+Force overriding existing lilo.conf.
+
+=item B<-u>
+
+Force overriding/update of boot line in lilo.conf.
+
+=back
+
+=head1 EXAMPLES
+
+Lines in the configuration file /etc/lilo.conf:
+
+  ### LILO global section ###
+
+  #large-memory
+  lba32
+  #boot = /dev/sda
+  boot = /dev/disk/by-id/ata-SAMSUNG_SV1604N_S01FJ10X999999
+  #root = /dev/sda1
+  root = "UUID=18843936-00f9-4df0-a373-000d05a5dd44"
+  map = /boot/map
+  install = menu
+  menu-scheme = Wb:Yr:Wb:Wb
+  prompt
+  timeout = 100
+  vga = normal
+  #password = 
+  #default = Linux
+
+  ### LILO per-image section ###
+
+  image = /boot/vmlinuz-3.17-trunk-686
+      label = "Linux"
+      #root = /dev/sda1
+      #root = "UUID=18843936-00f9-4df0-a373-000d05a5dd44"
+      read-only
+  #   restricted
+  #   alias = 1
+  #   optional
+      initrd = /boot/initrd.img-3.17-trunk-686
+
+  image = /boot/vmlinuz-3.14-trunk-686
+      label = "Linux Old"
+      #root = /dev/sda1
+      #root = "UUID=18843936-00f9-4df0-a373-000d05a5dd44"
+      read-only
+  #   restricted
+  #   alias = 2
+  #   optional
+      initrd = /boot/initrd.img-3.14-trunk-686
+
+=head1 COPYRIGHT and LICENSE
+
+Copyright (C) 2011-2015 Joachim Wiedorn
+
+This script is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by 
+the Free Software Foundation; either version 2 of the License, or 
+(at your option) any later version.
+
+=head1 AUTHOR
+
+B<liloconfig> was written by Joachim Wiedorn.
+
+This manual page was written by Joachim Wiedorn <joodevel at joonet.de>.
+
+=head1 SEE ALSO
+
+B<lilo>(8), B<update-lilo>(8), B<lilo-uuid-diskid>(8)
+
+=cut
