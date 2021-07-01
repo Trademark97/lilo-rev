@@ -8,7 +8,7 @@
  * in the source directory.
  */
 
-int do_md_install, ndisk, md_bios;
+extern int ndisk, md_bios;
 
 int raid_setup(void);
 void raid_final(void);
