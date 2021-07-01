@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+#  zz-runlilo - postinst script for modern kernel management
+#
+#  Copyright 2010-2014 Joachim Wiedorn
+#  All rights reserved.
+#
+#  Licensed under the terms contained in the file 'COPYING'
+#  in the source directory.
+#
+
+set -e
+PAR=ever
+
+# check for maintainer param
+if [ -n "${DEB_MAINT_PARAMS}" ]; then
+	PAR=none
+	if [ `echo "${DEB_MAINT_PARAMS}" | grep -v abort | grep -c configure` -eq 1 ]
+	then PAR=configure; fi
+fi
+
+# check for configure|upgrade|remove|purge
+case "$PAR" in
+
+  ever|configure)
+    # Run the boot loader installer
+    # and ignore error on degraded mdadm RAID1
+    if [ -f /sbin/lilo ]; then
+      if [ -f /etc/lilo.conf ]; then
+        lilo -H  </dev/null  >&2
+      else
+        echo "Warning: Not updating LILO; /etc/lilo.conf not found!"  >&2
+      fi
+    fi
+    ;;
+
+esac
+
+# end of file
