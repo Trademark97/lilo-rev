@@ -442,7 +442,7 @@ B<lilo> was written by:
 
  Werner Almesberger (version 0 to 21),
  John Coffman (version 21.2 to 22.8),
- Joachim Wiedorn (since version 23.0 to 24.2),
+ Joachim Wiedorn (version 23.0 to 24.2),
  Tobias Monckton (since version 24.3).
 
 This manual page was written by Werner Almesberger and Joachim Wiedorn
