@@ -2,8 +2,8 @@
 manpage:  LILO
 section:  8
 title:    lilo documentation
-version:  24.2
-datum:    2015-11-22
+version:  24.3
+datum:    2021-07-01
 
 =encoding utf8
 
@@ -430,6 +430,7 @@ It is best to use the  default mechanism, as it works correctly in all cases.
  Copyright (C) 1992-1998 Werner Almesberger
  Copyright (C) 1999-2007 John Coffman
  Copyright (C) 2009-2014 Joachim Wiedorn
+ Copyright (C) 2021 Tobias Monckton
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted under the terms of the BSD license found in
@@ -441,7 +442,8 @@ B<lilo> was written by:
 
  Werner Almesberger (version 0 to 21),
  John Coffman (version 21.2 to 22.8),
- Joachim Wiedorn (since version 23.0).
+ Joachim Wiedorn (since version 23.0 to 24.2),
+ Tobias Monckton (since version 24.3).
 
 This manual page was written by Werner Almesberger and Joachim Wiedorn
 <joodevel at joonet.de>.
